@@ -6,7 +6,7 @@ import (
 	"github.com/jscaltreto/aoc-2022/lib"
 )
 
-func MoveCrates(data []string, moveFunc func([]byte, int) []byte ) string {
+func MoveCrates(data []string, moveFunc func([]byte, int) []byte) string {
 	cursor := 0
 	stacks := [][]byte{}
 	for ; cursor < len(data); cursor++ {
