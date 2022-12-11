@@ -47,7 +47,7 @@ func PartB(filename string) int {
 		if scan == 0 {
 			fmt.Print("\n")
 		}
-		if scan >= X - 1 && scan <= X + 1 {
+		if scan >= X-1 && scan <= X+1 {
 			fmt.Print("█")
 		} else {
 			fmt.Print(" ")
