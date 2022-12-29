@@ -9,7 +9,7 @@ import (
 
 const (
 	// Directions
-	Right = iota
+	Right Dir = iota
 	Down
 	Left
 	Up
@@ -17,9 +17,15 @@ const (
 
 var reNum *regexp.Regexp = regexp.MustCompile(`(\d+)([LR]|$)`)
 
+type Dir int
+
+func (d Dir) Left() Dir     { return (d + 3) % 4 }
+func (d Dir) Right() Dir    { return (d + 1) % 4 }
+func (d Dir) Opposite() Dir { return (d + 2) % 4 }
+
 type Conn struct {
 	cell *Cell
-	dir  int
+	dir  Dir
 }
 
 type Cell struct {
@@ -95,21 +101,21 @@ func Walk(cur *Cell, path string) int {
 		}
 		if dir := m[2]; dir != "" {
 			if dir == "L" {
-				face = (face + 3) % 4
+				face = face.Left()
 			} else {
-				face = (face + 1) % 4
+				face = face.Right()
 			}
 		}
 	}
-	return (1000 * cur.row) + (4 * cur.col) + face
+	return (1000 * cur.row) + (4 * cur.col) + int(face)
 }
 
 func Cubeify(start *Cell, size int) {
 	next := &Conn{start, Right}
 
-	connect := false
-	connDirA, connDirB := 0, 0
+	connecting := false
 	connections := 0
+	var connDirA, connDirB Dir
 
 	stack := []*Conn{}
 
@@ -119,26 +125,26 @@ func Cubeify(start *Cell, size int) {
 
 		for i := 0; i < size; i++ {
 			cur = next
-			if connect {
+			if connecting {
 				n := len(stack) - 1
 				neighbor := stack[n]
 				stack = stack[:n]
 
-				cur.cell.neighbors[connDirA] = &Conn{neighbor.cell, (connDirB + 2) % 4}
-				neighbor.cell.neighbors[connDirB] = &Conn{cur.cell, (connDirA + 2) % 4}
+				cur.cell.neighbors[connDirA] = &Conn{neighbor.cell, connDirB.Opposite()}
+				neighbor.cell.neighbors[connDirB] = &Conn{cur.cell, connDirA.Opposite()}
 			}
 			side = append(side, cur)
 			next = cur.cell.neighbors[cur.dir]
 		}
 
-		if connect {
+		if connecting {
 			// If there's nothing in the stack, continue straight.
 			if len(stack) > 0 {
 				top := stack[len(stack)-1]
 				cur = top
 			}
 			connections++
-			connect = false
+			connecting = false
 		} else {
 			stack = append(stack, side...)
 		}
@@ -146,15 +152,15 @@ func Cubeify(start *Cell, size int) {
 		nc := cur.cell.neighbors[cur.dir]
 		if nc == nil {
 			// right turn
-			next = &Conn{cur.cell, (cur.dir + 1) % 4}
+			next = &Conn{cur.cell, cur.dir.Right()}
 		} else {
 			next = nc
-			if nc = next.cell.neighbors[(nc.dir+3)%4]; nc != nil {
+			if nc = next.cell.neighbors[nc.dir.Left()]; nc != nil {
 				// left turn; We can form some connections.
 				next = nc
-				connect = true
-				connDirA = (next.dir + 3) % 4
-				connDirB = (cur.dir + 3) % 4
+				connecting = true
+				connDirA = next.dir.Left()
+				connDirB = cur.dir.Left()
 			}
 		}
 	}
