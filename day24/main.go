@@ -22,9 +22,11 @@ var Moves map[Wind]Coord = map[Wind]Coord{
 	Down:  {1, 0},
 }
 
+var Start Coord = Coord{-1, 0}
+
 type Coord [2]int
 
-func (c Coord) NextCoords() []Coord {
+func (c Coord) Neighbors() []Coord {
 	nc := []Coord{c}
 	for _, m := range Moves {
 		nc = append(nc, Coord{c[Y] + m[Y], c[X] + m[X]})
@@ -38,6 +40,8 @@ type Map struct {
 	m    map[Coord][]Wind
 	w, h int
 }
+
+func (m *Map) End() Coord { return Coord{m.h, m.w - 1} }
 
 func (m *Map) AddWind(c Coord, w Wind) {
 	if _, f := m.m[c]; !f {
@@ -74,7 +78,7 @@ func ShortestDist(m *Map, start, goal Coord) (int, *Map) {
 			if s == goal {
 				return t, m
 			}
-			for _, nc := range s.NextCoords() {
+			for _, nc := range s.Neighbors() {
 				if nc == start || nc == goal || nextMap.CanMove(nc) {
 					nextStates[nc] = struct{}{}
 				}
@@ -86,7 +90,6 @@ func ShortestDist(m *Map, start, goal Coord) (int, *Map) {
 }
 
 func LoadMap(filename string) *Map {
-	MapCache = map[int]*Map{}
 	data := lib.SlurpFile(filename)
 	m := &Map{map[Coord][]Wind{}, len(data[0]) - 2, len(data) - 2}
 	for y := 1; y < len(data)-1; y++ {
@@ -98,19 +101,17 @@ func LoadMap(filename string) *Map {
 	return m
 }
 
-var MapCache map[int]*Map
-
 func PartA(filename string) int {
 	m := LoadMap(filename)
-	t, _ := ShortestDist(m, Coord{-1, 0}, Coord{m.h, m.w - 1})
+	t, _ := ShortestDist(m, Start, m.End())
 	return t - 1
 }
 
 func PartB(filename string) int {
 	m := LoadMap(filename)
-	t1, m := ShortestDist(m, Coord{-1, 0}, Coord{m.h, m.w - 1})
-	t2, m := ShortestDist(m.NextMap(), Coord{m.h, m.w - 1}, Coord{-1, 0})
-	t3, m := ShortestDist(m.NextMap(), Coord{-1, 0}, Coord{m.h, m.w - 1})
+	t1, m := ShortestDist(m, Start, m.End())
+	t2, m := ShortestDist(m.NextMap(), m.End(), Start)
+	t3, _ := ShortestDist(m.NextMap(), Start, m.End())
 
 	return t1 + t2 + t3 - 1
 }
